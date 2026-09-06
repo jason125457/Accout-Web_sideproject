@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', 'Noto Sans TC', 'Inter', -apple-system, sans-serif;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900;
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Financial tabular numbers: guarantees numbers align vertically */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+@layer components {
+  /* Revolut & Stripe inspired card surface */
+  .fintech-card {
+    @apply bg-white border border-slate-200/80 rounded-3xl transition-all duration-200;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 6px 16px -4px rgba(15, 23, 42, 0.04);
+  }
+
+  .fintech-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  }
+
+  /* Live status beacon */
+  .live-beacon {
+    position: relative;
+  }
+  .live-beacon::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 9999px;
+    background-color: currentColor;
+    opacity: 0.35;
+    animation: beaconPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes beaconPulse {
+  0% { transform: scale(0.95); opacity: 0.6; }
+  50% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+

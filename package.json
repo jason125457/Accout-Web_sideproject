@@ -1,0 +1,7 @@
+{
+  "name": "accout-web-sideproject",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix web/frontend install && npm --prefix web/frontend run build && node -e \"require('fs').cpSync('web/frontend/dist', 'dist', {recursive: true})\""
+  }
+}

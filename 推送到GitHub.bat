@@ -1,28 +1,27 @@
 @echo off
-chcp 65001 >nul
-title GitHub æ¨é€å·¥å…·
+title GitHub ±À°e¤u¨ã
 color 0a
 cd /d "%~dp0"
 
 echo =======================================================
-echo   Personal Asset Hub - GitHub ä¸€éµæ¨é€å·¥å…·
+echo   Personal Asset Hub - GitHub ¤@Áä±À°e¤u¨ã
 echo =======================================================
 echo.
-echo [1/2] æ­£åœ¨æª¢æŸ¥ä¸¦æ‰“åŒ…æœ¬åœ°è®Šæ›´ (git add + commit)...
+echo [1/2] ¥¿¦bÀË¬d¨Ã¥´¥]¥»¦aÅÜ§ó...
 git add .
 git commit -m "update: sync changes" >nul 2>nul
 
-echo [2/2] æ­£åœ¨æ¨é€è‡³ GitHub (git push)...
+echo [2/2] ¥¿¦b±À°e¦Ü GitHub...
 git push -u origin main
 
 if %errorlevel% equ 0 (
     echo.
     echo =======================================================
-    echo [æˆåŠŸ] å°ˆæ¡ˆå·²æˆåŠŸæ¨é€åˆ° GitHubï¼
-    echo Cloudflare Pages æ­£åœ¨è‡ªå‹•éƒ¨ç½²æœ€æ–°ç‰ˆæœ¬ã€‚
+    echo [¦¨¥\] ±M®×¤w¦¨¥\±À°e¨ì GitHub¡I
+    echo Cloudflare Pages ±N¦Û°Ê«Ø¸mµo¥¬³Ì·sª©¥»¡C
     echo =======================================================
 ) else (
     echo.
-    echo [æç¤º] æ¨é€éç¨‹ä¸­è‹¥æœ‰éŒ¯èª¤ï¼Œè«‹æª¢æŸ¥ç¶²è·¯æˆ–æ¬Šé™ã€‚
+    echo [´£¥Ü] ±À°e¹Lµ{¤¤­Y¦³¿ù»~¡A½ĞÀË¬dºô¸ô©ÎÅv­­¡C
 )
 pause

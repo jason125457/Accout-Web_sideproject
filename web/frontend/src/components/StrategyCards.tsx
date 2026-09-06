@@ -63,7 +63,7 @@ export const StrategyCards: React.FC<StrategyCardsProps> = ({ strategy }) => {
             const pct = (p.ratio * 100).toFixed(1);
             const isGood = p.status.includes('✅') || p.status.includes('穩健') || p.status.includes('防禦充足');
             return (
-              <div key={idx} className="space-y-1.5 p-3 rounded-2xl bg-slate-50/70 border border-slate-100">
+              <div key={idx} className="space-y-1.5 p-3 rounded-2xl bg-[#F5F2EB]/60 border border-[#ECE7DE]">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-800">{p.title}</span>
                   <div className="flex items-center space-x-1.5">
@@ -98,7 +98,7 @@ export const StrategyCards: React.FC<StrategyCardsProps> = ({ strategy }) => {
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+      <div className="mt-4 pt-3 border-t border-[#ECE7DE] text-xs text-slate-500 flex items-center justify-between">
         <span>策略哲學：核心長抱複利，衛星控險沙盒</span>
         <span className="text-teal-700 font-bold">攻守平衡</span>
       </div>

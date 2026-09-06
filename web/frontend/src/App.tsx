@@ -4,7 +4,9 @@ import type { DashboardSummary, HoldingItem, BankBalanceItem, ChartDataPoint } f
 import type { GasConfig } from './types/gas';
 import { fetchFromGas } from './utils/gasAssetApi';
 import { DEMO_DASHBOARD, DEMO_HOLDINGS, DEMO_BANKS, DEMO_CHART } from './utils/demoAssetData';
+import { formatStockTicker } from './utils/formatters';
 import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
 import { KpiCards } from './components/KpiCards';
 import { NetWorthChart } from './components/NetWorthChart';
 import { StrategyCards } from './components/StrategyCards';
@@ -15,7 +17,7 @@ import { QuickCashModal } from './components/QuickCashModal';
 import { QuickHoldingModal } from './components/QuickHoldingModal';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { SyncModal } from './components/SyncModal';
-import { Layers, Landmark, DollarSign, Calendar } from 'lucide-react';
+import { LayoutDashboard, Layers, Landmark, Calendar, Cloud } from 'lucide-react';
 
 const STORAGE_KEY = 'myasset_gas_config';
 const AUTO_SYNC_INTERVAL = 5 * 60; // 5 分鐘
@@ -32,6 +34,7 @@ export function App() {
   const [gasConfig, setGasConfig] = useState<GasConfig>(getStoredGasConfig);
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [isDemoActive, setIsDemoActive] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
   const [holdings, setHoldings] = useState<HoldingItem[]>([]);
@@ -54,6 +57,14 @@ export function App() {
   const [selectedHolding, setSelectedHolding] = useState<HoldingItem | null>(null);
   const [addTxOpen, setAddTxOpen] = useState(false);
 
+  // 規範化持股代號函式
+  const sanitizeHoldings = (raw: HoldingItem[]): HoldingItem[] => {
+    return (raw || []).map((h) => ({
+      ...h,
+      ticker: formatStockTicker(h.ticker, h.market, h.name),
+    }));
+  };
+
   const loadAllData = useCallback(async (currentConfig = gasConfig) => {
     try {
       setLoading(true);
@@ -63,7 +74,7 @@ export function App() {
         const gasRes = await fetchFromGas(currentConfig.webAppUrl, currentConfig.secretToken);
         if (gasRes.success && gasRes.data) {
           setDashboard(gasRes.data.dashboard);
-          setHoldings(gasRes.data.holdings);
+          setHoldings(sanitizeHoldings(gasRes.data.holdings));
           setBanks(gasRes.data.banks);
           setChartData(gasRes.data.chart);
           setIsDemoActive(false);
@@ -76,7 +87,7 @@ export function App() {
       // 2. 如果為 Demo 模式：使用內建擬真示範資料
       if (currentConfig.isDemoMode) {
         setDashboard(DEMO_DASHBOARD);
-        setHoldings(DEMO_HOLDINGS);
+        setHoldings(sanitizeHoldings(DEMO_HOLDINGS));
         setBanks(DEMO_BANKS);
         setChartData(DEMO_CHART);
         setIsDemoActive(true);
@@ -92,14 +103,14 @@ export function App() {
           api.getChart(),
         ]);
         setDashboard(dashRes);
-        setHoldings(holdRes);
+        setHoldings(sanitizeHoldings(holdRes));
         setBanks(bankRes);
         setChartData(chartRes);
         setIsDemoActive(false);
       } catch (localErr) {
         // 在 Cloudflare Pages 等無本地伺服器環境下，自動以 Demo 模式呈現
         setDashboard(DEMO_DASHBOARD);
-        setHoldings(DEMO_HOLDINGS);
+        setHoldings(sanitizeHoldings(DEMO_HOLDINGS));
         setBanks(DEMO_BANKS);
         setChartData(DEMO_CHART);
         setIsDemoActive(true);
@@ -212,9 +223,9 @@ export function App() {
 
   if (loading && !dashboard) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-600">
+      <div className="min-h-screen bg-[#FBF9F5] flex flex-col items-center justify-center text-slate-600">
         <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-sm font-semibold text-slate-700">正在載入個人全資產戰略數據庫...</p>
+        <p className="text-sm font-bold text-slate-800">正在載入個人全資產戰略數據庫...</p>
       </div>
     );
   }
@@ -222,8 +233,32 @@ export function App() {
   const isCloudConnected = Boolean(gasConfig.webAppUrl && !gasConfig.isDemoMode);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col pb-16 md:pb-0">
-      {/* 頂部導覽列 */}
+    <div className="min-h-screen bg-[#FBF9F5] text-slate-900 flex flex-col lg:pl-64">
+      {/* 1. 桌面固定側邊欄 + 行動端抽屜導覽 (仿照 money.shuns.site) */}
+      <Sidebar
+        activeTab={activeTab}
+        onSelectTab={(tab) => {
+          if (tab === 'DASHBOARD') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            setActiveTab(tab);
+            const el = document.getElementById('tab-content-area');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }}
+        isCloudConnected={isCloudConnected}
+        isDemoMode={isDemoActive}
+        isSyncing={syncing}
+        onRefresh={handleSyncMarket}
+        onOpenSyncModal={() => setSyncModalOpen(true)}
+        isOpenMobile={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        holdingsCount={holdings.length}
+        banksCount={banks.length}
+        historyCount={chartData.length}
+      />
+
+      {/* 2. 頂部迎賓導覽列 */}
       <Navbar
         latestDate={dashboard?.latest_date || ''}
         usdRate={dashboard?.usd_twd_rate || 31.70}
@@ -243,60 +278,61 @@ export function App() {
         isDemoMode={isDemoActive}
         isCloudConnected={isCloudConnected}
         onOpenSyncModal={() => setSyncModalOpen(true)}
+        onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
       />
 
-      {/* 主儀表板區域 */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* 1. 四大 KPI 卡片 */}
+      {/* 3. 主儀表板內容區 (iOS Safe Area 避震) */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6 pb-24 lg:pb-12">
+        {/* 3.1 四大 KPI 質感卡片 */}
         {dashboard && <KpiCards data={dashboard} chartData={chartData} />}
 
-        {/* 2. 中層圖表與戰略板塊 (兩欄佈局) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        {/* 3.2 中層圖表與戰略板塊 (兩欄佈局) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="lg:col-span-2 min-w-0">
             <NetWorthChart data={chartData} />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 min-w-0">
             {dashboard && <StrategyCards strategy={dashboard.strategy} />}
           </div>
         </div>
 
-        {/* 3. 下層分頁切換 (持倉明細 vs 銀行現金 vs 每日淨值) */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-1.5 p-1 bg-slate-200/70 rounded-2xl border border-slate-200/80 w-fit flex-wrap gap-y-1">
+        {/* 3.3 下層分頁切換 (持倉明細 vs 銀行現金 vs 每日淨值) */}
+        <div id="tab-content-area" className="space-y-4">
+          <div className="flex items-center space-x-1.5 p-1 bg-[#F5F2EB] rounded-2xl border border-[#ECE7DE] w-fit flex-wrap gap-y-1">
             <button
               onClick={() => setActiveTab('HOLDINGS')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'HOLDINGS'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Layers className="w-4 h-4 text-teal-600" />
-              <span>證券與 ETF 持倉明細 ({holdings.length})</span>
+              <span>證券持倉 ({holdings.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('CASH')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'CASH'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Landmark className="w-4 h-4 text-emerald-600" />
-              <span>銀行現金部位明細 ({banks.length})</span>
+              <span>銀行現金 ({banks.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('DAILY')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'DAILY'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Calendar className="w-4 h-4 text-indigo-600" />
-              <span>每日資產淨值歷史 ({chartData.length})</span>
+              <span>淨值歷史 ({chartData.length})</span>
             </button>
           </div>
 
@@ -312,42 +348,83 @@ export function App() {
         </div>
       </main>
 
-      {/* 頁尾（桌機版） */}
-      <footer className="border-t border-slate-200/80 py-8 text-center text-xs text-slate-500 font-medium hidden md:block">
+      {/* 4. 頁尾（桌機版） */}
+      <footer className="border-t border-[#ECE7DE] py-6 text-center text-xs text-slate-500 font-medium hidden lg:block">
         <p>
-          個人全資產戰略管理中樞 • {isCloudConnected ? 'Google 試算表雲端無伺服器架構' : isDemoActive ? 'Demo 示範環境' : '本地 SQLite 離線隱私加密儲存'} • Cloudflare Pages 全球 CDN 加速
+          個人全資產戰略管理中樞 • {isCloudConnected ? 'Google 試算表雲端無伺服器架構' : isDemoActive ? 'Demo 示範環境' : '本地 SQLite 離線隱私加密儲存'} • Cloudflare Pages 全球加速
         </p>
       </footer>
 
-      {/* ── 行動端底部快速操作列（md 以上隱藏）── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-200 flex items-stretch shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+      {/* 5. ── 行動端 (iPhone) 底部固定快捷導覽列（lg 以上隱藏）── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-xl border-t border-[#ECE7DE] flex items-stretch shadow-[0_-4px_24px_rgba(0,0,0,0.06)] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-2 px-2">
         <button
-          onClick={() => handleOpenQuickCash()}
-          className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-50 transition-colors active:bg-emerald-100"
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="flex-1 flex flex-col items-center justify-center py-1 gap-1 text-[10px] font-bold text-slate-600 hover:text-slate-900 active:scale-95 transition-all"
         >
-          <DollarSign className="w-5 h-5" />
-          <span>現金校對</span>
+          <LayoutDashboard className="w-5 h-5 text-slate-500" />
+          <span>總覽</span>
         </button>
-        <div className="w-px bg-slate-200" />
+
+        <button
+          onClick={() => {
+            setActiveTab('HOLDINGS');
+            const el = document.getElementById('tab-content-area');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 gap-1 text-[10px] font-bold transition-all active:scale-95 ${
+            activeTab === 'HOLDINGS'
+              ? 'text-teal-700 font-extrabold'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Layers className="w-5 h-5" />
+          <span>持倉</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('CASH');
+            const el = document.getElementById('tab-content-area');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 gap-1 text-[10px] font-bold transition-all active:scale-95 ${
+            activeTab === 'CASH'
+              ? 'text-emerald-700 font-extrabold'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Landmark className="w-5 h-5" />
+          <span>現金</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('DAILY');
+            const el = document.getElementById('tab-content-area');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`flex-1 flex flex-col items-center justify-center py-1 gap-1 text-[10px] font-bold transition-all active:scale-95 ${
+            activeTab === 'DAILY'
+              ? 'text-indigo-700 font-extrabold'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Calendar className="w-5 h-5" />
+          <span>歷史</span>
+        </button>
+
         <button
           onClick={() => setSyncModalOpen(true)}
-          className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 text-[10px] font-bold text-teal-700 hover:bg-teal-50 transition-colors active:bg-teal-100"
+          className="flex-1 flex flex-col items-center justify-center py-1 gap-1 text-[10px] font-bold text-sky-700 active:scale-95 transition-all"
         >
-          <span className="text-base leading-none">☁️</span>
-          <span>雲端同步</span>
-        </button>
-        <div className="w-px bg-slate-200" />
-        <button
-          onClick={handleSyncMarket}
-          disabled={syncing}
-          className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-50 transition-colors active:bg-slate-100 disabled:opacity-50"
-        >
-          <RefreshCwIcon spinning={syncing} />
-          <span>{syncing ? '同步中' : '同步行情'}</span>
+          <Cloud className="w-5 h-5" />
+          <span>雲端</span>
         </button>
       </div>
 
-      {/* 彈窗 */}
+      {/* 6. 彈窗模態框 */}
       <SyncModal
         isOpen={syncModalOpen}
         onClose={() => setSyncModalOpen(false)}
@@ -378,25 +455,6 @@ export function App() {
         onSuccess={loadAllData}
       />
     </div>
-  );
-}
-
-function RefreshCwIcon({ spinning }: { spinning: boolean }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className={`w-5 h-5 ${spinning ? 'animate-spin' : ''}`}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="23 4 23 10 17 10" />
-      <polyline points="1 20 1 14 7 14" />
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-    </svg>
   );
 }
 

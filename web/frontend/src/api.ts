@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE || '';
+import { formatStockTicker } from './utils/formatters';
 
 export interface StrategyAllocation {
   core_value_twd: number;
@@ -89,7 +90,11 @@ export const api = {
   async getHoldings(): Promise<HoldingItem[]> {
     const res = await fetch(`${API_BASE}/api/holdings`);
     if (!res.ok) throw new Error('無法取得持倉明細');
-    return res.json();
+    const data: HoldingItem[] = await res.json();
+    return data.map((h) => ({
+      ...h,
+      ticker: formatStockTicker(h.ticker, h.market, h.name),
+    }));
   },
 
   async getBanks(): Promise<BankBalanceItem[]> {

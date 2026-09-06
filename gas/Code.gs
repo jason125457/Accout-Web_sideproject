@@ -40,6 +40,33 @@ function getSpreadsheet() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
 
+/**
+ * 台股代號智慧正規化函式：修復前導零（如 50 -> 0050, 692 -> 00692, 6208 -> 006208）
+ */
+function normalizeTicker(ticker, market, name) {
+  if (!ticker) return String(ticker || '');
+  let t = String(ticker).trim();
+  if (t.endsWith('.0')) t = t.slice(0, -2);
+  if ((market || '').toUpperCase() === 'US') return t.toUpperCase();
+  if (t.startsWith('00')) return t.toUpperCase();
+  const n = String(name || '').toLowerCase();
+  if (t === '6208' || n.indexOf('富邦台50') !== -1 || n.indexOf('006208') !== -1) {
+    return '006208';
+  }
+  const match = t.match(/^(\d+)([A-Za-z]?)$/);
+  if (match) {
+    const digits = match[1];
+    const suffix = match[2].toUpperCase();
+    if (digits.length === 3) {
+      return '00' + digits + suffix;
+    }
+    if (digits.length <= 2) {
+      return '00' + digits.padStart(2, '0') + suffix;
+    }
+  }
+  return t.toUpperCase();
+}
+
 // ==============================================================================
 // 2. 核心計算引擎：即時試算總資產、股票部位與現金
 // ==============================================================================
@@ -72,11 +99,12 @@ function calculateCurrentAssetSnapshot(ss) {
 
   for (let i = 1; i < holdingsData.length; i++) {
     const row = holdingsData[i];
-    const ticker = String(row[0] || '').trim();
-    if (!ticker) continue;
+    const rawTicker = String(row[0] || '').trim();
+    if (!rawTicker) continue;
 
-    const name = String(row[1] || ticker).trim();
+    const name = String(row[1] || rawTicker).trim();
     const market = String(row[2] || 'TW').trim().toUpperCase();
+    const ticker = normalizeTicker(rawTicker, market, name);
     const category = String(row[3] || 'CORE_ETF').trim().toUpperCase();
     const currency = String(row[4] || 'TWD').trim().toUpperCase();
     const shares = Number(row[5]) || 0;

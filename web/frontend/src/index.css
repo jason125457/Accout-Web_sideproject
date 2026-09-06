@@ -8,10 +8,13 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-[#FBF9F5] text-slate-900;
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   /* Financial tabular numbers: guarantees numbers align vertically */
@@ -22,14 +25,25 @@
 }
 
 @layer components {
-  /* Revolut & Stripe inspired card surface */
+  /* money.shuns.site inspired warm linen fintech card */
   .fintech-card {
-    @apply bg-white border border-slate-200/80 rounded-3xl transition-all duration-200;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 6px 16px -4px rgba(15, 23, 42, 0.04);
+    @apply bg-white border border-[#ECE7DE] rounded-[24px] transition-all duration-200;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02), 0 4px 12px -2px rgba(28, 25, 23, 0.03);
   }
 
   .fintech-card:hover {
-    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 8px 24px -4px rgba(28, 25, 23, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  }
+
+  /* Deep luxury dark card */
+  .fintech-card-dark {
+    @apply bg-[#14201D] border border-[#233530] text-white rounded-[24px] transition-all duration-200;
+    box-shadow: 0 6px 20px -2px rgba(17, 26, 24, 0.2);
+  }
+
+  /* Gold button */
+  .btn-gold {
+    @apply bg-gradient-to-r from-[#E5A93C] to-[#D4982E] text-[#111A18] font-bold shadow-md shadow-[#E5A93C]/20 hover:brightness-105 active:scale-95 transition-all;
   }
 
   /* Live status beacon */
@@ -51,6 +65,23 @@
   0% { transform: scale(0.95); opacity: 0.6; }
   50% { transform: scale(1.6); opacity: 0; }
   100% { transform: scale(0.95); opacity: 0; }
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-right {
+  animation: slideRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* iOS Safe Area Utilities */
+.pt-safe {
+  padding-top: max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.75rem));
+}
+.pb-safe {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Custom smooth scrollbar */

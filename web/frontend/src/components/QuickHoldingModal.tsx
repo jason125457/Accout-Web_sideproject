@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Check, Edit3 } from 'lucide-react';
 import { api } from '../api';
 import type { HoldingItem } from '../api';
+import { formatStockTicker } from '../utils/formatters';
 
 interface QuickHoldingModalProps {
   isOpen: boolean;
@@ -32,12 +33,14 @@ export const QuickHoldingModal: React.FC<QuickHoldingModalProps> = ({
 
   if (!isOpen || !holding) return null;
 
+  const normalizedTicker = formatStockTicker(holding.ticker, holding.market, holding.name);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       await api.adjustHolding(
-        holding.ticker,
+        normalizedTicker,
         parseFloat(shares || '0'),
         parseFloat(cost || '0'),
         holding.currency
@@ -53,14 +56,14 @@ export const QuickHoldingModal: React.FC<QuickHoldingModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
-      <div className="bg-white border border-slate-200/80 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
+      <div className="bg-white border border-[#ECE7DE] rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-[#F5F2EB]/80">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center border border-teal-200/50">
               <Edit3 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">校對持倉：{holding.ticker}</h3>
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">校對持倉：{normalizedTicker}</h3>
               <p className="text-xs text-slate-500 font-medium">{holding.name} · {holding.market === 'TW' ? '台股' : '美股'}</p>
             </div>
           </div>

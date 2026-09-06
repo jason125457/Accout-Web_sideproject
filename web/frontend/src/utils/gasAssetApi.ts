@@ -1,4 +1,5 @@
 import type { DashboardSummary, HoldingItem, BankBalanceItem, ChartDataPoint } from '../api';
+import { formatStockTicker } from './formatters';
 
 export interface GasAssetResponse {
   status: 'success' | 'error';
@@ -47,9 +48,18 @@ export async function fetchFromGas(webAppUrl: string, secretToken: string = ''):
       return { success: false, message: json.message || 'Google 試算表回傳格式錯誤或存取遭拒' };
     }
 
+    // 自動校正與補齊台股代號前導零（如 50 -> 0050, 692 -> 00692, 6208 -> 006208）
+    const sanitizedHoldings = (json.data.holdings || []).map((h) => ({
+      ...h,
+      ticker: formatStockTicker(h.ticker, h.market, h.name),
+    }));
+
     return {
       success: true,
-      data: json.data
+      data: {
+        ...json.data,
+        holdings: sanitizedHoldings,
+      },
     };
   } catch (err: any) {
     return { success: false, message: `連線失敗: ${err.message || String(err)}` };

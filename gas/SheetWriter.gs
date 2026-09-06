@@ -25,28 +25,34 @@ const SheetWriter = {
    * @param {string} market 'TW' 或 'US'
    * @returns {string} 正規化後的代號字串
    */
-  normalizeTicker: function(ticker, market) {
-    if (!ticker) return String(ticker);
+  normalizeTicker: function(ticker, market, name) {
+    if (!ticker) return String(ticker || '');
     let t = String(ticker).trim();
     // 移除 JS 浮點數尾巴（如 "50.0" -> "50"）
     if (t.endsWith('.0')) t = t.slice(0, -2);
 
-    if (market === 'TW' && /^\d+$/.test(t)) {
-      // 台股數字代號：
-      // 長度 2-3 碼 -> 補到 4 碼（0050, 0056 等）
-      // 長度 4 碼 -> 已是正確格式（2330, 2412）
-      // 長度 5 碼 -> 補到 6 碼（00692 -> 006208 等，補到 5 位就夠了）
-      // 實際規則：小於等於 4 碼全部 padStart 到 4；若原始 > 4 碼（如 63L) 保留
-      if (t.length <= 3) {
-        t = t.padStart(4, '0');
-      } else if (t.length === 4 && t.startsWith('0')) {
-        // 已是 0050, 0056 等，保留
-      } else if (t.length === 3 || t.length === 2) {
-        t = t.padStart(4, '0');
-      }
-      // 特殊 ETF：若 <= 5 碼且以 00 開頭則直接保留（00692, 00631L 等）
+    if ((market || '').toUpperCase() === 'US') return t.toUpperCase();
+    if (t.startsWith('00')) return t.toUpperCase();
+
+    const n = String(name || '').toLowerCase();
+    if (t === '6208' || n.indexOf('富邦台50') !== -1 || n.indexOf('006208') !== -1) {
+      return '006208';
     }
-    return t;
+
+    const match = t.match(/^(\d+)([A-Za-z]?)$/);
+    if (match) {
+      const digits = match[1];
+      const suffix = match[2].toUpperCase();
+      // 3 碼台股數字皆為 5 碼 ETF（以 00 開頭，如 692 -> 00692, 878 -> 00878）
+      if (digits.length === 3) {
+        return '00' + digits + suffix;
+      }
+      // 1~2 碼補齊至 4 碼（如 50 -> 0050, 56 -> 0056）
+      if (digits.length <= 2) {
+        return '00' + digits.padStart(2, '0') + suffix;
+      }
+    }
+    return t.toUpperCase();
   },
 
   /**
@@ -63,7 +69,7 @@ const SheetWriter = {
       const rawTicker = String(s.ticker || '').trim();
       // 去除浮點尾巴（如 "50.0" -> "50"）
       const cleanTicker = rawTicker.endsWith('.0') ? rawTicker.slice(0, -2) : rawTicker;
-      const ticker = this.normalizeTicker(cleanTicker, market);
+      const ticker = this.normalizeTicker(cleanTicker, market, s.name);
       const key = market + '_' + ticker;
 
       const cost   = Number(s.total_cost)      || 0;

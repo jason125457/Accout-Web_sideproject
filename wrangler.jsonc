@@ -6,8 +6,6 @@
     "command": "npm run build"
   },
   "assets": {
-    "directory": "./dist",
-    "not_found_handling": "single-page-application",
-    "html_handling": "auto-trailing-slash"
+    "directory": "./dist"
   }
 }

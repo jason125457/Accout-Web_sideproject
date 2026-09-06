@@ -233,7 +233,7 @@ export function App() {
   const isCloudConnected = Boolean(gasConfig.webAppUrl && !gasConfig.isDemoMode);
 
   return (
-    <div className="min-h-screen bg-[#FBF9F5] text-slate-900 flex flex-col lg:pl-64">
+    <div className="min-h-screen bg-[#FBF9F5] text-slate-900 flex flex-col">
       {/* 1. 桌面固定側邊欄 + 行動端抽屜導覽 (仿照 money.shuns.site) */}
       <Sidebar
         activeTab={activeTab}
@@ -258,11 +258,13 @@ export function App() {
         historyCount={chartData.length}
       />
 
-      {/* 2. 頂部迎賓導覽列 */}
-      <Navbar
-        latestDate={dashboard?.latest_date || ''}
-        usdRate={dashboard?.usd_twd_rate || 31.70}
-        syncing={syncing}
+      {/* 2. 主內容區域（在桌機版 lg 寬度時以 lg:pl-64 緊密貼合左側 16rem 固定側邊欄） */}
+      <div className="flex-1 min-w-0 w-full lg:pl-64 flex flex-col min-h-screen">
+        {/* 頂部迎賓導覽列 */}
+        <Navbar
+          latestDate={dashboard?.latest_date || ''}
+          usdRate={dashboard?.usd_twd_rate || 31.70}
+          syncing={syncing}
         onSync={handleSyncMarket}
         onOpenQuickCash={() => handleOpenQuickCash()}
         onOpenAddTx={() => {
@@ -354,6 +356,7 @@ export function App() {
           個人全資產戰略管理中樞 • {isCloudConnected ? 'Google 試算表雲端無伺服器架構' : isDemoActive ? 'Demo 示範環境' : '本地 SQLite 離線隱私加密儲存'} • Cloudflare Pages 全球加速
         </p>
       </footer>
+      </div>
 
       {/* 5. ── 行動端 (iPhone) 底部固定快捷導覽列（lg 以上隱藏）── */}
       <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white/95 backdrop-blur-xl border-t border-[#ECE7DE] flex items-stretch shadow-[0_-4px_24px_rgba(0,0,0,0.06)] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-2 px-2">

@@ -231,7 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* 桌機版固定左側欄 */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 shadow-xl shadow-black/10">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 z-30 shadow-xl shadow-black/10">
         {sidebarContent}
       </aside>
 
